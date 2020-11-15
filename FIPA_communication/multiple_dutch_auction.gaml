@@ -443,12 +443,12 @@ species participant skills: [fipa,moving] {
 			
 		if (self.maxPrice >= firstProposal) {
 			write '\t' + name + ' sends a propose message to ' + agent(proposalFromInitiator.sender).name;
-			do propose with: [ message :: proposalFromInitiator, contents :: ['I will buy for that price'] ];
+			do propose with: [ message :: proposalFromInitiator, contents :: [self.interestItem +': I will buy for that price'] ];
 		}
 		
 		else  {
 			write '\t' + name + ' sends a refuse message to ' + agent(proposalFromInitiator.sender).name;
-			do refuse with: [ message :: proposalFromInitiator, contents :: ['I will not buy'] ];
+			do refuse with: [ message :: proposalFromInitiator, contents :: [self.interestItem + ': I will not buy'] ];
 		}
 	}
 	

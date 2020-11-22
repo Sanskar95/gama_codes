@@ -7,8 +7,8 @@ model Task2LeaderElection
 
 global {
 	
-	int globalDelayTime <- 50; //time before stage restarts
-	int nbOfParticipants <- 20; //people should be 5
+	int globalDelayTime <- 50; 
+	int numberOfParticipants <- 20;
 	int circleDistance <- 8; 
 	list<list> participantsDecidedToJoin <- [[],[],[],[],[],[]];
 			
@@ -17,7 +17,7 @@ global {
 	
 	init {		
 		
-		create FestivalGuest number: nbOfParticipants;
+		create FestivalGuest number: numberOfParticipants;
 	
 				
 		create Stage number: 1
@@ -25,14 +25,14 @@ global {
 		location <- {50,50,0};
 		participantListIndex <- 0;
 		//light shows, visuals, music type, space, food, drinks
-		BandAttributes <- [(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10)];
+		bandAttributes <- [(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10)];
 		}
 		
 		create Stage number: 1
 		{
 		location <- {10,10,0};
 		participantListIndex <- 1;
-		BandAttributes <- [(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10)];
+		bandAttributes <- [(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10)];
 		
 		}
 		
@@ -40,7 +40,7 @@ global {
 		{
 		location <- {80,80,0};
 		participantListIndex <- 2;
-		BandAttributes <- [(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10)];
+		bandAttributes <- [(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10)];
 		
 		}
 		
@@ -48,61 +48,60 @@ global {
 		{
 		location <- {40,80,0};
 		participantListIndex <- 3;
-		BandAttributes <- [(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10)];
+		bandAttributes <- [(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10)];
 		
 		}
 	}
 }
 
 species Stage skills: [fipa] {
-	bool concertHasEnded <- false;
-	list<float> BandAttributes;
-	bool sent_info <- false;
-	bool sent_first <- false;
+	bool stageResetFlag <- false;
+	list<float> bandAttributes;
+	bool sentFirstCommunication <- false;
+	bool sentSecondCommunication <- false;
 	
 	int delayStart;
 	
-	int localDelayTimeBand <- rnd(50,150); //time before stage restarts
+	int localDelayTimeBand <- rnd(50,150);
 	
-	int delayStartBandPlay; //start counting when sent inform
+	int delayStartBandPlay;
 	bool delaybandOK<-true;
 	
 	
 	bool delayOK <- true;
-	bool is_playing <- false;
+	bool isStageActive <- false;
 	
 
 	
 	int participantListIndex;	
 	
 		reflex receive_cfp_when_playing when: !empty(cfps) {
-		if (is_playing)
+		if (isStageActive)
 		{
 		
 		message proposalFromInitiator <- cfps[0];
 		write '(Time ' + time + '): ' + name + ' receives a cfp message from ' + agent(proposalFromInitiator.sender).name + ' with content ' + proposalFromInitiator.contents;
-		do start_conversation with: [ to :: list(agent(proposalFromInitiator.sender)), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: [("Answer: BAND is playing at: "+self.name),BandAttributes,self,participantListIndex,"START"] ];
+		do start_conversation with: [ to :: list(agent(proposalFromInitiator.sender)), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: [("Concert is being conducted at: "+self.name),bandAttributes,self,participantListIndex,"START"] ];
 		
 		}
 	}
 	
 		
-	reflex resetAttributes when: concertHasEnded 
+	reflex resetAttributes when: stageResetFlag 
 	{
 		delayOK <- false;
-		sent_info <- false;
-		sent_first <- false;
-		concertHasEnded <- false;
+		sentFirstCommunication <- false;
+		sentSecondCommunication <- false;
+		stageResetFlag <- false;
 		delayStart <- time;	
 		participantsDecidedToJoin[participantListIndex] <- [];
-		is_playing <- false;		
-		BandAttributes <- [(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10)];
+		isStageActive <- false;		
+		bandAttributes <- [(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10),(rnd(1,5)/10)];
 		
 		localDelayTimeBand <- rnd(50,150);
 		
 	}
 	
-	//Delay for time for setting up the stage for a new band	
 	reflex countDelay when: !delayOK 
 	{
 		if((time-delayStart)>globalDelayTime)
@@ -112,63 +111,48 @@ species Stage skills: [fipa] {
 			
 	}
 	
-	//How long a band will play
 		reflex countDelayBand when: !delaybandOK 
 	{
 		if((time-delayStartBandPlay)>localDelayTimeBand)
 		{
 			delaybandOK<-true;
-			write "SEND END";
+			write "Sending concert end info to participants:";
 			if (length(participantsDecidedToJoin[participantListIndex])>0)
 			{
-			do start_conversation with: [ to :: participantsDecidedToJoin[participantListIndex], protocol :: 'fipa-contract-net', performative :: 'inform', contents :: [("END: "+self.name),BandAttributes,self,participantListIndex,"END"] ];
+			do start_conversation with: [ to :: participantsDecidedToJoin[participantListIndex], protocol :: 'fipa-contract-net', performative :: 'inform', contents :: [("The concert has ended , bye everyone: "+self.name),bandAttributes,self,participantListIndex,"END"] ];
 			
 			}
-			//sent_info<-false;
-			is_playing<-false;
-			concertHasEnded<-true;
+			isStageActive<-false;
+			stageResetFlag<-true;
 		}
 			
 	}
 	
 	
 		
-	reflex send_info_to_possible_participants when: !sent_first and !sent_info and delayOK {
+	reflex send_info_to_possible_participants when: !sentSecondCommunication and !sentFirstCommunication and delayOK {
 		
-		write "firstSend"+self.name+"BandAttributes:"+BandAttributes;
+		write "These are the attributes we offer "+self.name+"   bandAttributes: "+bandAttributes;
 		
-		is_playing <- true;
+		isStageActive <- true;
 		list notBusyParticipants <- (list(FestivalGuest));
 		if(length(notBusyParticipants)>0)
 		{
 		
-		do start_conversation with: [ to :: notBusyParticipants, protocol :: 'fipa-contract-net', performative :: 'inform', contents :: [("Inform: BAND starts at: "+self.name),BandAttributes,self,participantListIndex,"START"] ];
-		sent_info <- true;
+		do start_conversation with: [ to :: notBusyParticipants, protocol :: 'fipa-contract-net', performative :: 'inform', contents :: [("Concert is being conducted at: "+self.name),bandAttributes,self,participantListIndex,"START"] ];
+		sentFirstCommunication <- true;
 		
 		}
 		
-		//DELAY
 		delayOK <- false;
 		delayStartBandPlay <- time;
 		delaybandOK<-false;
 		
-		
-		
-		
 	}
 	
-
-	
-	reflex receive_inform_messages when: !empty(informs) {
-		write '(Time ' + time + '): ' + name + ' receives inform messages';
-		
-		loop i over: informs {
-			//write '\t' + name + ' receives a inform message from ' + agent(i.sender).name + ' with content ' + i.contents ;
-		}
-	}
 	aspect base {
 		draw circle((circleDistance)#m) color: #lightblue depth:1;
-		draw circle(1) color: (is_playing) ? #purple : #red depth:4;
+		draw circle(1) color: (isStageActive) ? #purple : #red depth:4;
 	}
 }
 
@@ -176,14 +160,14 @@ species FestivalGuest skills: [fipa,moving] {
 	
 	bool busy <- false;
 	bool gotFirstProposal <- false;
-	bool goingToStage <- false;
-	list<float> utilityValues <- [(rnd(0,5)/10),(rnd(0,5)/10),(rnd(0,5)/10),(rnd(0,5)/10),(rnd(0,5)/10),(rnd(0,5)/10)];
+	bool goingToStageFlag <- false;
+	list<float> utilityValuesList <- [(rnd(0,5)/10),(rnd(0,5)/10),(rnd(0,5)/10),(rnd(0,5)/10),(rnd(0,5)/10),(rnd(0,5)/10)];
 	bool leaderElection <- false;
-	bool isSlave<-false;
+	bool isNormalParticipant<-false;
 	bool isLeader<-false;
 	bool initiator<-false;
 	bool isCrowdSensititive <- flip(0.2);
-	int crowdMassValue <- int(rnd(1, nbOfParticipants));
+	int crowdMassValue <- int(rnd(1, numberOfParticipants));
 	
 	agent leaderagent;
 	
@@ -196,12 +180,8 @@ species FestivalGuest skills: [fipa,moving] {
 	
 	point initPoint <- {(rnd(0,100)),(rnd(0,100)),0};
 	
-	
-		
-	
 	point targetPoint <- nil;
 	
-	//FIRST Agent receive votes             #4
 	reflex firstAgentReceiveVotes when: !empty(accept_proposals) {
 		write name+"receives vote on indexs";
 		list<agent> festivalguests <- list(FestivalGuest);
@@ -219,8 +199,8 @@ species FestivalGuest skills: [fipa,moving] {
 		}
 		
 		
-		int highest <- max(voteslist); // var0 equals 100.0
-		int sendIndex <- voteslist index_of highest; // var1 equals 3 
+		int highest <- max(voteslist); 
+		int sendIndex <- voteslist index_of highest; 
 		
 		write "Winner is"+sendIndex+"with votes: "+voteslist[sendIndex];
 		
@@ -229,7 +209,6 @@ species FestivalGuest skills: [fipa,moving] {
 	}
 	
 	
-	//FIRST Agent initiates election (not real leader)    #2
 	bool send_once<-false;
 	reflex sendLeaderElectionToOthers when: !empty(failures) and !(send_once) {
 		send_once<-true;
@@ -239,10 +218,7 @@ species FestivalGuest skills: [fipa,moving] {
 		do start_conversation with: [ to :: list(festivalguests), protocol :: 'fipa-contract-net', performative :: 'query', contents :: ["STARTELECTION"] ];
 	}
 	
-		//#5
 		reflex receiveFinalVote when: !empty(subscribes) {
-		//send_once<-true;
-		//write name+"sends leader election";
 		list<agent> festivalguests <- list(FestivalGuest);
 		int selfIndex <- festivalguests index_of self; 
 						
@@ -256,16 +232,13 @@ species FestivalGuest skills: [fipa,moving] {
 			}
 			else{
 				leaderagent <- festivalguests[vote];
-				isSlave<-true;	
+				isNormalParticipant<-true;	
 			}
 		}
 		
 		
 	}
 	
-	
-	
-			//# 3
 		bool voteOnce<-false;
 		reflex agentVote when: !empty(queries) and !voteOnce {
 			
@@ -273,26 +246,19 @@ species FestivalGuest skills: [fipa,moving] {
 		 	
 		list<agent> festivalguests <- list(FestivalGuest);	
 		
-		//list<int> votes;
 		int vote <- rnd(0,(length(festivalguests)-1));
 		write name+"send his vote"+vote;
 		
 		
-		/*loop a_temp_var over: listcells { 
-			add 1 to: votes;
-		}*/
-			
+	
 		do start_conversation with: [ to :: list(festivalguests[0]), protocol :: 'fipa-contract-net', performative :: 'accept_proposal', contents :: [vote] ];
     	
 		}
-	
-		
-	// #1 
-	//SLAVE RANDOMLY initiate leader election	   			
-    reflex beIdle when: !(busy) and !leaderElection and !isSlave {
-    	if (!leaderElection and !isSlave and !isLeader)
+	   			
+    reflex beIdle when: !(busy) and !leaderElection and !isNormalParticipant {
+    	if (!leaderElection and !isNormalParticipant and !isLeader)
     	{
-    	leaderElection <- false; //TO
+    	leaderElection <- false; ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     	if(leaderElection)
     	{
     		write name+"sends leader election";
@@ -306,15 +272,15 @@ species FestivalGuest skills: [fipa,moving] {
 		do wander;
 		}
 		
-	reflex moveToTarget when: targetPoint != nil and !isSlave
+	reflex moveToTarget when: targetPoint != nil and !isNormalParticipant
 	{
 		do goto target:targetPoint;
 	}
 	
 	point lastLocation;
-		reflex moveToTargetIfSlave when: isSlave
+		reflex moveToTargetIfSlave when: isNormalParticipant
 	{
-		FestivalGuest leaderLocal <- leaderagent;
+		FestivalGuest leaderLocal <- FestivalGuest(leaderagent);
 		point leaderPoint <- leaderLocal.targetPoint;
 		if (leaderPoint != nil)
 		{
@@ -328,13 +294,11 @@ species FestivalGuest skills: [fipa,moving] {
 	}
 	
 	
-	//to remove TargetPoint
-	reflex arrivedAtStage when: goingToStage{
+	reflex arrivedAtStage when: goingToStageFlag{
 			if(distance_to(self,targetPoint)<1){
-			
 			write self.name + "At Stage " + currentStage;
 			self.targetPoint <- nil;
-			self.goingToStage <- false;
+			self.goingToStageFlag <- false;
 			
 			}
 		}
@@ -363,8 +327,8 @@ species FestivalGuest skills: [fipa,moving] {
 		if(startOrEndMessage="START")
 		{
 
-		float calculateUtility <- (stageAttributes[0]*utilityValues[0])+(stageAttributes[1]*utilityValues[1])+(stageAttributes[2]*utilityValues[2])+(stageAttributes[3]*utilityValues[3])+(stageAttributes[4]*utilityValues[4])+(stageAttributes[5]*utilityValues[5]);
-		write name+"calculates utility with"+calculateUtility+"current utility: "+currentBestUtility;
+		float calculateUtility <- (stageAttributes[0]*utilityValuesList[0])+(stageAttributes[1]*utilityValuesList[1])+(stageAttributes[2]*utilityValuesList[2])+(stageAttributes[3]*utilityValuesList[3])+(stageAttributes[4]*utilityValuesList[4])+(stageAttributes[5]*utilityValuesList[5]);
+		write name+"The calculated utility is "+calculateUtility+" while the previous utility was   : "+currentBestUtility;
 		
 		if(self.currentBestUtility<calculateUtility)
 		{
@@ -379,13 +343,13 @@ species FestivalGuest skills: [fipa,moving] {
 			add self to: participantsDecidedToJoin[participantListIndex];
 			self.targetPoint <- any_location_in(stage);
 			self.targetPoint <- {(targetPoint.x-rnd(1,circleDistance/2)),(targetPoint.y-rnd(circleDistance/2)),targetPoint.z};
-			self.goingToStage <- true;		
+			self.goingToStageFlag <- true;		
 			if(isCrowdSensititive){
-				if(	length(participantsDecidedToJoin[participantListIndex])-1>crowdMassValue){
-					write '###################'+ self.name + 'Am not going there ,sorry stage' +stage +'has' + length(participantsDecidedToJoin[participantListIndex]) +  'while my limit is ' + crowdMassValue;
+				if(	length(participantsDecidedToJoin[participantListIndex])>crowdMassValue){
+					write '###############'+ self.name + 'Am not going there ,sorry stage' +stage +'has' + length(participantsDecidedToJoin[participantListIndex]) +  'while my limit is ' + crowdMassValue;
 					remove self from: list(participantsDecidedToJoin[participantListIndex]);
 					self.targetPoint <- self.initPoint;			
-			         self.goingToStage <- false;
+			         self.goingToStageFlag <- false;
 			         self.currentBestUtility<-0.0;
 			         currentStage <- nil;
 				}
@@ -397,24 +361,18 @@ species FestivalGuest skills: [fipa,moving] {
 		
 				if(startOrEndMessage="END")
 		{
-			write name + ' Goes home: ';
+			write name + ' Goes back: ';
 			self.targetPoint <- self.initPoint;			
-			self.goingToStage <- false;
+			self.goingToStageFlag <- false;
 			self.currentBestUtility<-0.0;
 			currentStage <- nil;
 			
-			//Check if someone is playing
-			do start_conversation with: [ to :: list(Stage), protocol :: 'fipa-contract-net', performative :: 'cfp', contents :: ['Are you playing? Send attributes'] ];
 			
-			
+			do start_conversation with: [ to :: list(Stage), protocol :: 'fipa-contract-net', performative :: 'cfp', contents :: ['Is anyone still active m was hoping to join'] ];
 		}
 		
-		
-			
-			
 		}
 		
-	
 	aspect base {
 		if(isCrowdSensititive){
 			draw square(2) color: (busy and self.targetPoint!=self.initPoint) ? ( (participantListIndex=0) ? #black : ((participantListIndex=1) ? #grey : ( (participantListIndex=2) ? #green : #yellow) ) ) :  #blue depth:1;
@@ -423,13 +381,10 @@ species FestivalGuest skills: [fipa,moving] {
 			draw circle(1) color: (busy and self.targetPoint!=self.initPoint) ? ( (participantListIndex=0) ? #black : ((participantListIndex=1) ? #grey : ( (participantListIndex=2) ? #green : #yellow) ) ) :  #blue depth:1;
 			
 		}
-			
-		
 	}
-	
 }
 
-experiment test type: gui {
+experiment run_simulation type: gui {
 
 	output {
 		display my_display type:opengl {

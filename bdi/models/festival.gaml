@@ -11,20 +11,15 @@ global {
 	
 	int globalHappinessValue <- 0 update: sum((MetalHead) collect (each.happy) + (ChillPerson) collect (each.happy) + (Gamer) collect (each.happy));
 	int globalDrunkValue <- 0 update: sum((MetalHead) collect (each.drunk) + (ChillPerson) collect (each.drunk) +  (Gamer) collect (each.drunk));
-	
-	int financeIn <-0 update: sum((ShadyPlace) collect (each.money));
-	int policeRepo <-0 update: sum((PoliceStation) collect (each.money));
-	int dancingChillGuys <- 0 update: ChillPerson count (each.willingToDance>willingToDanceMetric);
-	int nonDancingChillGuys <- 0 update: ChillPerson count (each.willingToDance<=willingToDanceMetric);
-		
+
 	init {		
 		
-		create MetalHead number: 50;
-		create ChillPerson number: 50;
-		create Thief number: 50;
-		create Police number: 50;
-		create Photographer number: 50;
-		create Gamer number: 50;
+		create MetalHead number: 10;
+		create ChillPerson number: 10;
+		create Thief number: 10;
+		create Police number: 10;
+		create Photographer number: 10;
+		create Gamer number: 10;
 		
 //		create MetalHead number: 0;
 //		create ChillPerson number: 15;
@@ -306,7 +301,7 @@ species Gamer skills: [fipa, moving]{
 					write myself.name + " says "+ myself.askGamer[0];
 					if(self.busy){
 						write myself.name + " says "+ myself.askGamer[1];
-						myself.happy <- myself.happy-5;
+						myself.happy <- myself.happy-2;
 						if(myself.willingToGetDrunk > 50){
 								write name+"Am gonna get drunk, huh";
 				                busy<-true;
@@ -1793,15 +1788,8 @@ species MetalHead skills: [fipa,moving] {
 }
 
 experiment run_festival type: gui {
-	
-    
-	//parameter "Wants to dance limit" var: wantsToDanceLimit;
-    //parameter "Wants to drink limit" var: acceptDrinkLimit;
-	
-
 	output {
-		   //monitor "Happy value" value: sumHappy;
-		   //monitor "Drunk value" value: sumDrunk;
+
 		   
 		  
 		display my_display type:opengl {
@@ -1824,40 +1812,13 @@ experiment run_festival type: gui {
 			
 			}
 			
-//			    display chart refresh: every(10 #cycles) {
-//        chart "Happiness" type: series style: spline {
-//        data "Happy value" value: globalHappinessValue color: #green marker: false;
-//        data "Drunk valuen" value: globalDrunkValue color: #red marker: false;
-//      
-//        }
-//        
-//        }
+			    display chart refresh: every(10 #cycles) {
+        chart "Happiness" type: series style: spline {
+        data "Happy value" value: globalHappinessValue color: #green marker: false;
+        data "Drunk valuen" value: globalDrunkValue color: #red marker: false;   
+        }       
+        }
 
-        
-//       layout #split parameters: true navigator: false editors: false consoles: true ;	
-//		
-//		display "data_pie_chart" type: java2D synchronized: true
-//		{
-//			chart "Police Repo vs Casino Repo" type: pie style: ring background: # darkblue color: # lightgreen axes: # yellow title_font: 'Serif' title_font_size: 32.0 title_font_style: 'italic'
-//			tick_font: 'Monospaced' tick_font_size: 14 tick_font_style: 'bold' label_font: 'Arial' label_font_size: 32 label_font_style: 'bold' x_label: 'Nice Xlabel' y_label:
-//			'Nice Ylabel'
-//			{
-//				data "Police Repo" value: policeRepo color: # black;
-//				data "Casino Repo" value: financeIn color: # blue;
-//			}
-//
-//		}
-//		display "repo_pie_chart" type: java2D synchronized: true
-//		{
-//			chart "ChillGuy Dance vs Not dance" type: pie style: ring background: # darkblue color: # lightgreen axes: # yellow title_font: 'Serif' title_font_size: 32.0 title_font_style: 'italic'
-//			tick_font: 'Monospaced' tick_font_size: 14 tick_font_style: 'bold' label_font: 'Arial' label_font_size: 32 label_font_style: 'bold' x_label: 'Nice Xlabel' y_label:
-//			'Nice Ylabel'
-//			{
-//				data "Chillguy wants to dance" value: dancingChillGuys color: # black;
-//				data "Chillguy doesn't want to dance" value: nonDancingChillGuys color: # blue;
-//			}
-//
-//		}
   	
 	}
 }
